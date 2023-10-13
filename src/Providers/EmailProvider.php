@@ -14,6 +14,10 @@ class EmailProvider {
         $this -> log -> debug('Initialized email provider');
     }
     
+    public function getId() {
+        return 'EMAIL';
+    }
+    
     public function getDescription() {
         return 'E-mail codes';
     }

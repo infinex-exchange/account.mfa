@@ -14,8 +14,13 @@ class Providers {
         $this -> log = $log;
         $this -> amqp = $amqp;
         $this -> pdo = $pdo;
-        $this -> providers = $providers;
+        $this -> providers = [];
         $this -> defaultProvider = $defaultProvider;
+        
+        if(!is_array($providers))
+            $providers = [ $provider ];
+        foreach($providers as $provider)
+            $this -> providers[$provider -> getId()] = $provider;
         
         $this -> log -> debug('Initialized providers manager');
         $this -> log -> info(
@@ -116,6 +121,106 @@ class Providers {
             $providers['providers'][$this -> defaultProvider]['enabled'] = true;
         
         return $providers;
+    }
+    
+    public function configureUserProvider($body) {
+        $th = $this;
+        
+        if(!isset($body['provider']))
+            throw new Error('MISSING_DATA', 'provider', 400);
+        
+        $providers = $this -> getUserProviders([
+            'uid' => @$body['uid']
+        ]);
+        
+        if(!isset($providers['providers'][ $body['provider'] ]))
+            throw new Error('NOT_FOUND', 'Unknown provider', 404);
+        
+        if($providers['providers'][ $body['provider'] ]['configured'])
+            throw new Error('CONFLICT', 'Already configured', 409);
+        
+        return Promise\resolve(
+            $this -> providers[ $body['provider'] ] -> configure(
+                $body['uid']
+            )
+        ) -> then(function($th, $config, $body) {
+            $task = [
+                ':uid' => $body['uid'],
+                ':providerid' => $body['provider'],
+                ':config' => json_encode($config['private'], JSON_UNESCAPED_SLASHES)
+            ];
+            
+            $sql = 'INSERT INTO user_providers(
+                        uid,
+                        providerid,
+                        config
+                    )
+                    VALUES(
+                        :uid,
+                        :providerid,
+                        :config
+                    )';
+            
+            $q = $th -> pdo -> prepare($sql);
+            $q -> execute($task);
+            
+            return $config['public'];
+        });
+    }
+    
+    public function removeUserProvider($body) {
+        if(!isset($body['provider']))
+            throw new Error('MISSING_DATA', 'provider', 400);
+        
+        $providers = $this -> getUserProviders([
+            'uid' => @$body['uid']
+        ]);
+        
+        if(!isset($providers['providers'][ $body['provider'] ]))
+            throw new Error('NOT_FOUND', 'Unknown provider', 404);
+        
+        if(! $providers['providers'][ $body['provider'] ]['configured'])
+            throw new Error('CONFLICT', 'Already not configured', 409);
+        
+        $task = [
+            ':uid' => $body['uid'],
+            ':providerid' => $body['provider']
+        ];
+        
+        $sql = 'DELETE FROM user_providers
+                WHERE uid = :uid
+                AND providerid = :providerid';
+        
+        $q = $th -> pdo -> prepare($sql);
+        $q -> execute($task);
+    }
+    
+    public function enableUserProvider($body) {
+        if(!isset($body['provider']))
+            throw new Error('MISSING_DATA', 'provider', 400);
+        
+        $providers = $this -> getUserProviders([
+            'uid' => @$body['uid']
+        ]);
+        
+        if(!isset($providers['providers'][ $body['provider'] ]))
+            throw new Error('NOT_FOUND', 'Unknown provider', 404);
+        
+        if(! $providers['providers'][ $body['provider'] ]['configured'])
+            throw new Error('NOT_CONFIGURED', 'Cannot enable not configured provider', 403);
+        
+        $task = [
+            ':uid' => $body['uid'],
+            ':providerid' => $body['provider']
+        ];
+        
+        $sql = 'UPDATE user_providers
+                SET enabled = TRUE
+                WHERE uid = :uid
+                AND providerid = :providerid';
+        
+        $q = $th -> pdo -> prepare($sql);
+        $q -> execute($task);
     }
     
     public function challenge($uid, $action, $context) {

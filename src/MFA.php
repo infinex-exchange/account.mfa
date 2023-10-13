@@ -65,7 +65,7 @@ class MFA {
             throw new Error('MISSING_DATA', 'action');
         
         if(! $this -> cases -> isRequired2FA($body['uid'], @$body['case']))
-            return;
+            return Promise\resolve(null);
         
         if(!isset($body['code'])) {
             return Promise\resolve(

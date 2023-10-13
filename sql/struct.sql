@@ -17,7 +17,7 @@ GRANT SELECT, INSERT, UPDATE ON user_cases TO "account.mfa";
 create table user_providers(
     uid bigint not null,
     providerid varchar(64) not null,
-    enabled boolean not null,
+    enabled boolean not null default FALSE,
     config text not null
 );
 

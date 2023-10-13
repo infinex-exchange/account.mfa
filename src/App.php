@@ -7,7 +7,8 @@ require __DIR__.'/Providers.php';
 require __DIR__.'/Cases.php';
 require __DIR__.'/MFA.php';
 
-require __DIR__.'/API/MFAAPI.php';
+require __DIR__.'/API/ProvidersAPI.php';
+require __DIR__.'/API/CasesAPI.php';
 
 use React\Promise;
 
@@ -18,7 +19,8 @@ class App extends Infinex\App\App {
     private $cases;
     private $mfa;
     
-    private $mfaApi;
+    private $providersApi;
+    private $casesApi;
     private $rest;
     
     function __construct() {
@@ -38,8 +40,14 @@ class App extends Infinex\App\App {
             $this -> amqp,
             $this -> pdo,
             [
-                'EMAIL' => new EmailProvider($this -> log, $this -> amqp, $this -> pdo),
-                'GA' => new GAProvider($this -> log)
+                new EmailProvider(
+                    $this -> log,
+                    $this -> amqp,
+                    $this -> pdo
+                ),
+                new GAProvider(
+                    $this -> log
+                )
             ],
             'EMAIL'
         );
@@ -57,16 +65,22 @@ class App extends Infinex\App\App {
             $this -> cases
         );
         
-        $this -> mfaApi = new MFAAPI(
+        $this -> providersApi = new ProvidersAPI(
             $this -> log,
-            $this -> mfa
+            $this -> providers
+        );
+        
+        $this -> casesApi = new CasesAPI(
+            $this -> log,
+            $this -> cases
         );
         
         $this -> rest = new Infinex\API\REST(
             $this -> log,
             $this -> amqp,
             [
-                $this -> mfaApi
+                $this -> providersApi,
+                $this -> casesApi
             ]
         );
     }
