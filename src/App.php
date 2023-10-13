@@ -67,12 +67,14 @@ class App extends Infinex\App\App {
         
         $this -> providersApi = new ProvidersAPI(
             $this -> log,
-            $this -> providers
+            $this -> providers,
+            $this -> mfa
         );
         
         $this -> casesApi = new CasesAPI(
             $this -> log,
-            $this -> cases
+            $this -> cases,
+            $this -> mfa
         );
         
         $this -> rest = new Infinex\API\REST(
