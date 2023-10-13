@@ -5,10 +5,12 @@ use PragmaRX\Google2FA\Google2FA;
 
 class GAProvider {
     private $log;
+    private $amqp;
     private $google2fa;
     
-    function __construct($log) {
+    function __construct($log, $amqp) {
         $this -> log = $log;
+        $this -> amqp = $amqp;
         
         $this -> google2fa = new Google2FA();
         
@@ -21,6 +23,34 @@ class GAProvider {
     
     public function getDescription() {
         return 'Google Authenticator';
+    }
+    
+    public function configure($uid) {
+        $th = $this;
+        
+        return $this -> amqp -> call(
+            'account.account',
+            'uidToEmail',
+            [
+                'uid' => $uid
+            ]
+        ) -> then(function($email) use($th) {
+            $secret = $th -> google2fa -> generateSecretKey();
+            $url = $th -> google2fa -> getQRCodeUrl(
+                'Infinex',
+                $email,
+                $secret
+            );
+            
+            return [
+                'private' => [
+                    'secret' => $secret
+                ],
+                'public' => [
+                    'url' => $url
+                ]
+            ];
+        });
     }
     
     public function challenge($uid, $config, $action, $context) {

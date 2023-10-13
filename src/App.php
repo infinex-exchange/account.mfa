@@ -46,7 +46,8 @@ class App extends Infinex\App\App {
                     $this -> pdo
                 ),
                 new GAProvider(
-                    $this -> log
+                    $this -> log,
+                    $this -> amqp
                 )
             ],
             'EMAIL'

@@ -22,6 +22,15 @@ class EmailProvider {
         return 'E-mail codes';
     }
     
+    public function configure($uid) {
+        return [
+            'private' => [
+            ],
+            'public' => [
+            ]
+        ];
+    }
+    
     public function challenge($uid, $config, $action, $context) {
         $th = $this;
         
