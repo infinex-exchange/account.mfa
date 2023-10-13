@@ -1,33 +1,35 @@
-CREATE ROLE "account.account" LOGIN PASSWORD 'password';
+CREATE ROLE "account.mfa" LOGIN PASSWORD 'password';
 
-create table users(
-    uid bigserial not null primary key,
-    email varchar(255) not null,
-    password varchar(255) not null,
-    verified boolean not null default false,
-    register_time timestamptz not null default current_timestamp
+create table cases(
+    caseid varchar(255) not null,
+    description varchar(255) not null
 );
 
-GRANT SELECT, UPDATE, INSERT ON users TO "account.account";
-GRANT SELECT, USAGE ON SEQUENCE users_uid_seq TO "account.account";
+GRANT SELECT ON cases TO "account.mfa";
 
-create table sessions(
-    sid bigserial not null primary key,
+create table user_cases(
     uid bigint not null,
-    api_key varchar(64) not null,
-    origin varchar(32) not null,
-    wa_remember boolean null,
-    wa_lastact timestamptz null,
-    wa_browser varchar(255) null,
-    wa_os varchar(255) null,
-    wa_device varchar(32) null,
-    ak_description varchar(255) null,
-    
-    foreign key(uid) references users(uid)
+    cases text not null
 );
 
-GRANT SELECT, UPDATE, INSERT, DELETE ON sessions TO "account.account";
-GRANT SELECT, USAGE ON SEQUENCE sessions_sid_seq TO "account.account";
+GRANT SELECT, INSERT, UPDATE ON user_cases TO "account.mfa";
+
+create table user_providers(
+    uid bigint not null,
+    providerid varchar(64) not null,
+    enabled boolean not null,
+    config text not null
+);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON user_providers TO "account.mfa";
+
+
+
+
+
+
+
+
 
 create table email_codes(
     codeid bigserial not null primary key,
@@ -39,5 +41,5 @@ create table email_codes(
     foreign key(uid) references users(uid)
 );
 
-GRANT SELECT, INSERT, DELETE ON email_codes TO "account.account";
-GRANT SELECT, USAGE ON SEQUENCE email_codes_codeid_seq TO "account.account";
+GRANT SELECT, INSERT, DELETE ON email_codes TO "account.mfa";
+GRANT SELECT, USAGE ON SEQUENCE email_codes_codeid_seq TO "account.mfa";

@@ -1,6 +1,10 @@
 <?php
 
-require __DIR__.'/EmailCodes.php';
+require __DIR__.'/Providers/EmailProvider.php';
+require __DIR__.'/Providers/GAProvider.php';
+
+require __DIR__.'/Providers.php';
+require __DIR__.'/Cases.php';
 require __DIR__.'/MFA.php';
 
 require __DIR__.'/API/MFAAPI.php';
@@ -10,7 +14,8 @@ use React\Promise;
 class App extends Infinex\App\App {
     private $pdo;
     
-    private $ec;
+    private $providers;
+    private $cases;
     private $mfa;
     
     private $mfaApi;
@@ -28,16 +33,28 @@ class App extends Infinex\App\App {
             DB_NAME
         );
         
-        $this -> ec = new EmailCodes(
+        $this -> providers = new Providers(
             $this -> log,
+            $this -> amqp,
+            $this -> pdo,
+            [
+                'EMAIL' => new EmailProvider($this -> log, $this -> pdo).
+                'GA' => new GAProvider($this -> log)
+            ],
+            'EMAIL'
+        );
+        
+        $this -> cases = new Cases(
+            $this -> log,
+            $this -> amqp,
             $this -> pdo
         );
         
         $this -> mfa = new MFA(
             $this -> log,
             $this -> amqp,
-            $this -> pdo,
-            $this -> ec
+            $this -> providers,
+            $this -> cases
         );
         
         $this -> mfaApi = new MFAAPI(
@@ -63,7 +80,10 @@ class App extends Infinex\App\App {
             }
         ) -> then(
             function() use($th) {
-                return $th -> ec -> start();
+                return Promise\all([
+                    $th -> providers -> start(),
+                    $th -> cases -> start()
+                ]);
             }
         ) -> then(
             function() use($th) {
@@ -89,7 +109,10 @@ class App extends Infinex\App\App {
             }
         ) -> then(
             function() use($th) {
-                return $th -> ec -> stop();
+                return Promise\all([
+                    $th -> providers -> stop(),
+                    $th -> cases -> stop()
+                ]);
             }
         ) -> then(
             function() use($th) {

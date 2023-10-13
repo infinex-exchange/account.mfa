@@ -2,23 +2,20 @@
 
 use Infinex\Exceptions\Error;
 use React\Promise;
-use PragmaRX\Google2FA\Google2FA;
 
 class MFA {
     private $log;
     private $amqp;
     private $pdo;
-    private $users;
-    private $vc;
+    private $providers;
+    private $cases;
     
-    function __construct($log, $amqp, $pdo, $users, $vc) {
-        $this -> log = $log;
+    function __construct($log, $amqp, $pdo, $providers, $cases) {
         $this -> amqp = $amqp;
-        $this -> pdo = $pdo;
-        $this -> users = $users;
-        $this -> vc = $vc;
+        $this -> providers = $providers;
+        $this -> cases = $cases;
         
-        $this -> log -> debug('Initialized MFA');
+        $this -> log -> debug('Initialized MFA engine');
     }
     
     public function start() {
@@ -33,11 +30,11 @@ class MFA {
         
         return Promise\all($promises) -> then(
             function() use($th) {
-                $th -> log -> info('Started MFA');
+                $th -> log -> info('Started MFA engine');
             }
         ) -> catch(
             function($e) use($th) {
-                $th -> log -> error('Failed to start MFA: '.((string) $e));
+                $th -> log -> error('Failed to start MFA engine: '.((string) $e));
                 throw $e;
             }
         );
@@ -52,143 +49,40 @@ class MFA {
         
         return Promise\all($promises) -> then(
             function() use ($th) {
-                $th -> log -> info('Stopped MFA');
+                $th -> log -> info('Stopped MFA engine');
             }
         ) -> catch(
             function($e) use($th) {
-                $th -> log -> error('Failed to stop MFA: '.((string) $e));
+                $th -> log -> error('Failed to stop MFA engine: '.((string) $e));
             }
         );
     }
     
-    public function mfa($uid, $group, $action, $context, $code) {
-        if($code) {
-            if(! $this -> validateMFACode($code))
-                throw new Error('VALIDATION_ERROR', 'Invalid 2FA code format', 400);
+    public function mfa($body) {
+        if(!isset($body['uid']))
+            throw new Error('MISSING_DATA', 'uid');
+        if(!isset($body['action']))
+            throw new Error('MISSING_DATA', 'action');
         
-            if(! $this -> response($uid, $group, $action, $context, $code))
-                throw new Error('INVALID_2FA', 'Invalid 2FA code', 401);
-        }
-        else {
-            $prov = $this -> challenge($uid, $group, $action, $context);
-            if($prov !== null)
-                throw new Error('REQUIRE_2FA', $prov, 511);
-        }
-    }
-    
-    private function challenge($uid, $group, $action, $context) {
-        $task = array(
-            ':uid' => $uid
-        );
+        if(! $this -> cases -> isRequired2FA($body['uid'], @$body['case']))
+            return;
         
-        $sql = 'SELECT email,
-                       provider_2fa';
-        if($group)
-            $sql .= ', for_'.$group.'_2fa AS enabled';
-        $sql .= ' FROM users
-                  WHERE uid = :uid';
-        
-        $q = $this -> pdo -> prepare($sql);
-        $q -> execute($task);
-        $row = $q -> fetch();
-        
-        if($group && !$row['enabled'])
-            return null;
-        
-        if($row['provider_2fa'] == 'EMAIL') {
-            $generatedCode = sprintf('%06d', rand(0, 999999));
-            
-            $task = array(
-                ':uid' => $uid,
-                ':code' => $generatedCode,
-                ':context_data' => md5($group.$action.json_encode($context))
+        if(!isset($body['code'])) {
+            $challengeInfo = $this -> providers -> challenge(
+                $body['uid'],
+                $body['action'],
+                @$body['context']
             );
-            
-            $sql = "INSERT INTO email_codes (
-                uid,
-                context,
-                code,
-                context_data
-            )
-            VALUES (
-                :uid,
-                '2FA',
-                :code,
-                :context_data
-            )";
-          
-            $q = $this -> pdo -> prepare($sql);
-            $q -> execute($task);
-          
-            $context['code'] = $generatedCode;
-            
-            $this -> amqp -> pub(
-                'mail',
-                [
-                    'uid' => $uid,
-                    'template' => '2fa_'.$action,
-                    'context' => $context,
-                    'email' => $row['email']
-                ]
-            );
-            
-            return 'EMAIL:'.$row['email'];
+            throw new Error('REQUIRE_2FA', $challengeInfo, 511);
         }
         
-        else {
-            return 'GA';
-        }
-    }
-    
-    private function response($uid, $group, $action, $context, $code) {
-        $task = array(
-            ':uid' => $uid
-        );
-        
-        $sql = 'SELECT provider_2fa,
-                       ga_secret_2fa';
-        if($group)
-            $sql.= ', for_'.$group.'_2fa AS enabled';
-        $sql .= ' FROM users
-                  WHERE uid = :uid';
-        
-        $q = $this -> pdo -> prepare($sql);
-        $q -> execute($task);
-        $row = $q -> fetch();
-        
-        if($group && !$row['enabled'])
-            return false;
-        
-        if($row['provider_2fa'] == 'EMAIL') {
-            $task = array(
-                ':uid' => $uid,
-                ':code' => $code,
-                ':context_data' => md5($group.$action.json_encode($context))
-            );
-            
-            $sql = "DELETE FROM email_codes
-                    WHERE uid = :uid
-                    AND code = :code
-                    AND context_data = :context_data
-                    RETURNING 1";
-          
-            $q = $this -> pdo -> prepare($sql);
-            $q -> execute($task);
-            $row = $q -> fetch();
-            
-            if($row)
-                return true;
-            return false;
-        }
-        
-        else {
-            $google2fa = new Google2FA();
-            return $google2fa -> verifyKey($row['ga_secret_2fa'], $code);
-        }
-    }
-    
-    private function validateMFACode($code) {
-        return preg_match('/^[0-9]{6}$/', $code);
+        if(! $this -> providers[ $provider['provider'] ] -> response(
+            $body['uid'],
+            $body['action'],
+            @$body['context'],
+            $body['code']
+        ))
+            throw new Error('INVALID_2FA', 'Invalid 2FA code', 401);
     }
 }
 
