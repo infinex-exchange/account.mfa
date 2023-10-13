@@ -1,96 +1,101 @@
 <?php
 
 use Infinex\Exceptions\Error;
-use React\Promise;
 
-class EmailCodes {
+class EmailProvider {
     private $log;
+    private $amqp;
     private $pdo;
     
-    function __construct($log, $pdo) {
+    function __construct($log, $amqp, $pdo) {
         $this -> log = $log;
         $this -> pdo = $pdo;
         
-        $this -> log -> debug('Initialized email codes manager');
+        $this -> log -> debug('Initialized email provider');
     }
     
-    public function start() {
-        $this -> log -> info('Started email codes manager');
-        return Promise\resolve(null);
+    public function getDescription() {
+        return 'E-mail codes';
     }
     
-    public function stop() {
-        $this -> log -> info('Stopped email codes manager');
-        return Promise\resolve(null);
-    }
-    
-    public function createCode($uid, $action, $context = null) {
-        if($deletePrev)
-            $this -> deletePrevCodes($uid, $context);
+    public function challenge($uid, $config, $action, $context) {
+        $th = $this;
         
         $generatedCode = sprintf('%06d', rand(0, 999999));
         
         $task = array(
             ':uid' => $uid,
-            ':context' => $context,
-            ':code' => $generatedCode,
-            ':context_data' => $contextData
+            ':action' => $action,
+            ':context_hash' => md5(json_encode($context)),
+            ':code' => $generatedCode
         );
         
         $sql = "INSERT INTO email_codes (
             uid,
-            context,
-            code,
-            context_data
+            action,
+            context_hash,
+            code
         )
         VALUES (
             :uid,
-            :context,
-            :code,
-            :context_data
+            :action,
+            :context_hash,
+            :code
         )";
         
         $q = $this -> pdo -> prepare($sql);
         $q -> execute($task);
         
-        return $generatedCode;
+        return $this -> amqp -> call(
+            'account.account',
+            'uidToEmail',
+            [
+                'uid' => $uid
+            ]
+        ) -> then(function($email) use($th, $uid, $action, $context) {
+            $th -> amqp -> pub(
+                'mail',
+                [
+                    'uid' => $uid,
+                    'template' => '2fa_'.$action,
+                    'context' => $context,
+                    'email' => $email
+                ]
+            );
+            
+            return $email;
+        });
     }
     
-    public function useCode($uid, $context, $code, $contextData = null) {
-        if(!isset($code))
-            throw new Error('MISSING_DATA', 'code', 400);
-        if(!$this -> validateVeriCode($code))
+    public function response($uid, $config, $action, $context, $code) {
+        if(!$this -> validateCode($code))
             throw new Error('VALIDATION_ERROR', 'code', 400);
         
         $task = array(
             ':uid' => $uid,
-            ':context' => $context,
-            ':code' => $generatedCode
+            ':action' => $action,
+            ':context_hash' => md5(json_encode($context)),
+            ':code' => $code
         );
-        if($contextData)
-            $task[':context_data'] = $contextData;
         
         $sql = 'DELETE FROM email_codes
                 WHERE uid = :uid
-                AND context = :context
-                AND code = :code';
-        
-        if($contextData)
-            $sql .= ' AND context_data = :context_data';
-        
-        $sql .= ' RETURNING context_data';
+                AND action = :action
+                AND context_hash = :context_hash
+                AND code = :code
+                RETURNING 1';
         
         $q = $this -> pdo -> prepare($sql);
         $q -> execute($task);
         $row = $q -> fetch();
         
         if(!$row)
-            throw new Error('INVALID_VERIFICATION_CODE', 'Invalid verification code', 401);
+            return false;
         
-        return $row['context_data'];
+        return true;
     }
     
-    private function validateEmailCode($code) {
+    private function validateCode($code) {
         return preg_match('/^[0-9]{6}$/', $code);
     }
 }

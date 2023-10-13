@@ -68,21 +68,27 @@ class MFA {
             return;
         
         if(!isset($body['code'])) {
-            $challengeInfo = $this -> providers -> challenge(
-                $body['uid'],
-                $body['action'],
-                @$body['context']
-            );
-            throw new Error('REQUIRE_2FA', $challengeInfo, 511);
+            return Promise\resolve(
+                $this -> providers -> challenge(
+                    $body['uid'],
+                    $body['action'],
+                    @$body['context']
+            ) -> then(function($challengeInfo) {
+                throw new Error('REQUIRE_2FA', $challengeInfo, 511);
+            });
         }
         
-        if(! $this -> providers[ $provider['provider'] ] -> response(
-            $body['uid'],
-            $body['action'],
-            @$body['context'],
-            $body['code']
-        ))
-            throw new Error('INVALID_2FA', 'Invalid 2FA code', 401);
+        return Promise\resolve(
+            $this -> providers[ $provider['provider'] ] -> response(
+                $body['uid'],
+                $body['action'],
+                @$body['context'],
+                $body['code']
+            )
+        ) -> then(function($valid) {
+            if(!$valid)
+                throw new Error('INVALID_2FA', 'Invalid 2FA code', 401);
+        });
     }
 }
 

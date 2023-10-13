@@ -23,23 +23,11 @@ create table user_providers(
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON user_providers TO "account.mfa";
 
-
-
-
-
-
-
-
-
 create table email_codes(
-    codeid bigserial not null primary key,
     uid bigint not null,
-    context varchar(32) not null,
-    code varchar(6) not null,
-    context_data text default null,
-    
-    foreign key(uid) references users(uid)
+    action varchar(64) not null,
+    context_hash varchar(32) not null,
+    code varchar(6) not null
 );
 
 GRANT SELECT, INSERT, DELETE ON email_codes TO "account.mfa";
-GRANT SELECT, USAGE ON SEQUENCE email_codes_codeid_seq TO "account.mfa";
