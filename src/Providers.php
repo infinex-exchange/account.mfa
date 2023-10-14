@@ -176,6 +176,9 @@ class Providers {
             'uid' => @$body['uid']
         ]);
         
+        if($body['provider'] == $this -> defaultProvider)
+            throw new Error('DEFAULT_PROVIDER', 'Cannot remove default provider', 403);
+        
         if(!isset($providers['providers'][ $body['provider'] ]))
             throw new Error('NOT_FOUND', 'Unknown provider', 404);
         
