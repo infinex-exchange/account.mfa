@@ -59,6 +59,7 @@ class MFA {
     }
     
     public function mfa($body) {
+        var_dump($body);
         if(!isset($body['uid']))
             throw new Error('MISSING_DATA', 'uid');
         if(!isset($body['action']))
