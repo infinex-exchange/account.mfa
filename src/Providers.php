@@ -143,7 +143,7 @@ class Providers {
             $this -> providers[ $body['provider'] ] -> configure(
                 $body['uid']
             )
-        ) -> then(function($th, $config, $body) {
+        ) -> then(function() use($th, $config, $body) {
             $task = [
                 ':uid' => $body['uid'],
                 ':providerid' => $body['provider'],
