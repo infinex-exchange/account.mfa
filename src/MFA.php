@@ -6,11 +6,11 @@ use React\Promise;
 class MFA {
     private $log;
     private $amqp;
-    private $pdo;
     private $providers;
     private $cases;
     
-    function __construct($log, $amqp, $pdo, $providers, $cases) {
+    function __construct($log, $amqp, $providers, $cases) {
+        $this -> log = $log;
         $this -> amqp = $amqp;
         $this -> providers = $providers;
         $this -> cases = $cases;
