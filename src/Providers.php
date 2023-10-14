@@ -93,11 +93,10 @@ class Providers {
             throw new Error('MISSING_DATA', 'uid', 400);
         
         $providers = $this -> getProviders();
-        foreach($providers['providers'] as $providerid => $v)
+        foreach($providers['providers'] as $providerid => $v) {
             $providers['providers'][$providerid]['configured'] = ($providerid == $this -> defaultProvider);
             $providers['providers'][$providerid]['enabled'] = false;
-        
-        var_dump($providers);
+        }
         
         $task = [
             ':uid' => $body['uid']
