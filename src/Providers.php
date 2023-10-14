@@ -225,7 +225,6 @@ class Providers {
     
     public function challenge($uid, $action, $context) {
         $pc = $this -> getUserProviderConfig($uid);
-        var_dump($pc);
         
         return $this -> providers[ $pc['provider'] ] -> challenge(
             $uid,
