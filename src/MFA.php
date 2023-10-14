@@ -77,7 +77,7 @@ class MFA {
                 $this -> providers -> challenge(
                     $body['uid'],
                     $body['action'],
-                    @$body['context']
+                    $context
                 )
             ) -> then(function($challengeInfo) {
                 throw new Error('REQUIRE_2FA', $challengeInfo, 511);
@@ -88,7 +88,7 @@ class MFA {
             $this -> providers -> response(
                 $body['uid'],
                 $body['action'],
-                @$body['context'],
+                $context,
                 $body['code']
             )
         ) -> then(function($valid) {
