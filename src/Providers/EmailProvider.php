@@ -66,7 +66,9 @@ class EmailProvider {
             [
                 'uid' => $uid
             ]
-        ) -> then(function($email) use($th, $uid, $action, $context) {
+        ) -> then(function($email) use($th, $uid, $action, $context, $generatedCode) {
+            $context['code'] = $generatedCode;
+            
             $th -> amqp -> pub(
                 'mail',
                 [
