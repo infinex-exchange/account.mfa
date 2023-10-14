@@ -73,6 +73,7 @@ class MFA {
                     $body['uid'],
                     $body['action'],
                     @$body['context']
+                )
             ) -> then(function($challengeInfo) {
                 throw new Error('REQUIRE_2FA', $challengeInfo, 511);
             });
