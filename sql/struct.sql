@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+
 CREATE ROLE "account.mfa" LOGIN PASSWORD 'password';
 
 create table cases(
@@ -24,10 +26,13 @@ create table user_providers(
 GRANT SELECT, INSERT, UPDATE, DELETE ON user_providers TO "account.mfa";
 
 create table email_codes(
+    time timestamptz not null default current_timestamp,
     uid bigint not null,
     action varchar(64) not null,
     context_hash varchar(32) not null,
     code varchar(6) not null
 );
+SELECT create_hypertable('email_codes', 'time');
+SELECT add_retention_policy('email_codes', INTERVAL '5 minutes');
 
 GRANT SELECT, INSERT, DELETE ON email_codes TO "account.mfa";
