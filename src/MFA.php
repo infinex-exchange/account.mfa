@@ -80,7 +80,7 @@ class MFA {
         }
         
         return Promise\resolve(
-            $this -> providers[ $provider['provider'] ] -> response(
+            $this -> providers -> response(
                 $body['uid'],
                 $body['action'],
                 @$body['context'],
