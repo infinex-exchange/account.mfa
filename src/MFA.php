@@ -59,13 +59,12 @@ class MFA {
     }
     
     public function mfa($body) {
-        var_dump($body);
         if(!isset($body['uid']))
             throw new Error('MISSING_DATA', 'uid');
         if(!isset($body['action']))
             throw new Error('MISSING_DATA', 'action');
             
-        if(!isset($body['context']) && !is_array($body['context']))
+        if(isset($body['context']) && !is_array($body['context']))
             throw new Error('VALIDATION_ERROR', 'context is not null or array');
         
         $context = isset($body['context']) ? $body['context'] : [];
