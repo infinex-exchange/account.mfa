@@ -253,7 +253,7 @@ class Providers {
         
         $sql = 'SELECT providerid,
                        config
-                FROM user_provider
+                FROM user_providers
                 WHERE uid = :uid
                 AND enabled = TRUE';
         
