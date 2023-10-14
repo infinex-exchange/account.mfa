@@ -97,6 +97,8 @@ class Providers {
             $providers['providers'][$providerid]['configured'] = ($providerid == $this -> defaultProvider);
             $providers['providers'][$providerid]['enabled'] = false;
         
+        var_dump($providers);
+        
         $task = [
             ':uid' => $body['uid']
         ];

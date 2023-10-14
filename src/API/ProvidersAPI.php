@@ -97,7 +97,6 @@ class ProvidersAPI {
     }
     
     private function ptpProvider($record) {
-        var_dump($record);
         return [
             'description' => $record['description'],
             'configured' => $record['configured'],
