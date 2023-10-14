@@ -24,7 +24,7 @@ class Providers {
         
         $this -> log -> debug('Initialized providers manager');
         $this -> log -> info(
-            'Available providers: '.implode(', ', array_keys($this -> $providers))
+            'Available providers: '.implode(', ', array_keys($this -> providers))
         );
         $this -> log -> info('Default provider: '.$this -> defaultProvider);
     }
