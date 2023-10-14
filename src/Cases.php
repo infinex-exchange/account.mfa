@@ -158,7 +158,7 @@ class Cases {
         if(!$row) {
             $sql = 'INSERT INTO user_cases(uid, cases) VALUES(:uid, :cases)';
             
-            $q = $this -> pdo -> prepate($sql);
+            $q = $this -> pdo -> prepare($sql);
             $q -> execute($task);
         }
     }
