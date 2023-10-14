@@ -147,7 +147,7 @@ class Cases {
         ];
         
         $sql = 'UPDATE user_cases
-                SET set cases = :cases
+                SET cases = :cases
                 WHERE uid = :uid
                 RETURNING 1';
         
