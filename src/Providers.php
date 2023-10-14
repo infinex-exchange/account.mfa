@@ -191,7 +191,7 @@ class Providers {
                 WHERE uid = :uid
                 AND providerid = :providerid';
         
-        $q = $th -> pdo -> prepare($sql);
+        $q = $this -> pdo -> prepare($sql);
         $q -> execute($task);
     }
     
@@ -219,7 +219,7 @@ class Providers {
                 WHERE uid = :uid
                 AND providerid = :providerid';
         
-        $q = $th -> pdo -> prepare($sql);
+        $q = $this -> pdo -> prepare($sql);
         $q -> execute($task);
     }
     
