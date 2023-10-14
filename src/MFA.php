@@ -63,6 +63,11 @@ class MFA {
             throw new Error('MISSING_DATA', 'uid');
         if(!isset($body['action']))
             throw new Error('MISSING_DATA', 'action');
+            
+        if(!isset($body['context']) && !is_array($body['context']))
+            throw new Error('VALIDATION_ERROR', 'context is not null or array');
+        
+        $context = isset($body['context']) ? $body['context'] : [];
         
         if(! $this -> cases -> isRequired2FA($body['uid'], @$body['case']))
             return Promise\resolve(null);
