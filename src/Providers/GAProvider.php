@@ -17,7 +17,7 @@ class GAProvider {
         $this -> log -> debug('Initialized Google Authenticator provider');
     }
     
-    public getId() {
+    public function getId() {
         return 'GA';
     }
     
