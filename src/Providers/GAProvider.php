@@ -30,15 +30,15 @@ class GAProvider {
         
         return $this -> amqp -> call(
             'account.account',
-            'uidToEmail',
+            'getUser',
             [
                 'uid' => $uid
             ]
-        ) -> then(function($email) use($th) {
+        ) -> then(function($user) use($th) {
             $secret = $th -> google2fa -> generateSecretKey();
             $url = $th -> google2fa -> getQRCodeUrl(
                 'Infinex',
-                $email,
+                $user['email'],
                 $secret
             );
             
