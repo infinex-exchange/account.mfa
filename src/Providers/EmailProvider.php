@@ -62,11 +62,11 @@ class EmailProvider {
         
         return $this -> amqp -> call(
             'account.account',
-            'uidToEmail',
+            'getUser',
             [
                 'uid' => $uid
             ]
-        ) -> then(function($email) use($th, $uid, $action, $context, $generatedCode) {
+        ) -> then(function($user) use($th, $uid, $action, $context, $generatedCode) {
             $context['code'] = $generatedCode;
             
             $th -> amqp -> pub(
@@ -75,11 +75,11 @@ class EmailProvider {
                     'uid' => $uid,
                     'template' => '2fa_'.$action,
                     'context' => $context,
-                    'email' => $email
+                    'email' => $user['email']
                 ]
             );
             
-            return $email;
+            return $user['email'];
         });
     }
     
