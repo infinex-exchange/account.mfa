@@ -1,6 +1,7 @@
 <?php
 
 use Infinex\Exceptions\Error;
+use function Infinex\Validation\validateId;
 use React\Promise;
 
 class Cases {
@@ -89,7 +90,10 @@ class Cases {
     
     public function getUserCases($body) {
         if(!isset($body['uid']))
-            throw new Error('MISSING_DATA', 'uid', 400);
+            throw new Error('MISSING_DATA', 'uid');
+        
+        if(!validateId($body['uid']))
+            throw new Error('VALIDATION_ERROR', 'uid');
         
         $cases = $this -> getCases();
         foreach($cases['cases'] as $caseid => $v)
@@ -172,7 +176,7 @@ class Cases {
         ]);
         
         if(!isset($cases['cases'][$case]))
-            throw new Error('VALIDATION_ERROR', 'Unknown case');
+            throw new Error('NOT_FOUND', 'Unknown case');
         
         return $cases['cases'][$case]['enabled'];
     }

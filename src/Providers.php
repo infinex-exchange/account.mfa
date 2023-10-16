@@ -1,6 +1,7 @@
 <?php
 
 use Infinex\Exceptions\Error;
+use function Infinex\Validation\validateId;
 use React\Promise;
 
 class Providers {
@@ -90,7 +91,9 @@ class Providers {
     
     public function getUserProviders($body) {
         if(!isset($body['uid']))
-            throw new Error('MISSING_DATA', 'uid', 400);
+            throw new Error('MISSING_DATA', 'uid');
+        if(!validateId($body['uid']))
+            throw new Error('VALIDATION_ERROR', 'uid');
         
         $providers = $this -> getProviders();
         foreach($providers['providers'] as $providerid => $v) {
@@ -129,6 +132,9 @@ class Providers {
         
         if(!isset($body['provider']))
             throw new Error('MISSING_DATA', 'provider', 400);
+            
+        if(!is_string($body['provider']))
+            throw new Error('VALIDATION_ERROR', 'provider', 400);
         
         $providers = $this -> getUserProviders([
             'uid' => @$body['uid']
@@ -172,6 +178,9 @@ class Providers {
     public function removeUserProvider($body) {
         if(!isset($body['provider']))
             throw new Error('MISSING_DATA', 'provider', 400);
+            
+        if(!is_string($body['provider']))
+            throw new Error('VALIDATION_ERROR', 'provider', 400);
         
         $providers = $this -> getUserProviders([
             'uid' => @$body['uid']
@@ -202,6 +211,9 @@ class Providers {
     public function enableUserProvider($body) {
         if(!isset($body['provider']))
             throw new Error('MISSING_DATA', 'provider', 400);
+        
+        if(!is_string($body['provider']))
+            throw new Error('VALIDATION_ERROR', 'provider', 400);
         
         $providers = $this -> getUserProviders([
             'uid' => @$body['uid']

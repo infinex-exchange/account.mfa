@@ -1,6 +1,7 @@
 <?php
 
 use Infinex\Exceptions\Error;
+use function Infinex\Validation\validateId;
 use React\Promise;
 
 class MFA {
@@ -63,6 +64,11 @@ class MFA {
             throw new Error('MISSING_DATA', 'uid');
         if(!isset($body['action']))
             throw new Error('MISSING_DATA', 'action');
+        
+        if(!validateId($body['uid']))
+            throw new Error('VALIDATION_ERROR', 'uid');
+        if(!is_string($body['action']))
+            throw new Error('VALIDATION_ERROR', 'action');
             
         if(isset($body['context']) && !is_array($body['context']))
             throw new Error('VALIDATION_ERROR', 'context is not null or array');
