@@ -150,21 +150,18 @@ class Cases {
             ':cases' => json_encode($override)
         ];
         
-        $sql = 'UPDATE user_cases
-                SET cases = :cases
-                WHERE uid = :uid
-                RETURNING 1';
+        $sql = 'INSERT INTO user_cases(
+                    uid,
+                    cases
+                ) VALUES (
+                    :uid,
+                    :cases
+                )
+                ON CONFLICT(uid) DO UPDATE
+                SET cases = EXCLUDED.cases';
         
         $q = $this -> pdo -> prepare($sql);
         $q -> execute($task);
-        $row = $q -> fetch();
-        
-        if(!$row) {
-            $sql = 'INSERT INTO user_cases(uid, cases) VALUES(:uid, :cases)';
-            
-            $q = $this -> pdo -> prepare($sql);
-            $q -> execute($task);
-        }
     }
     
     public function isRequired2FA($uid, $case) {

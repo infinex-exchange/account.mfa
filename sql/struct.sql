@@ -11,7 +11,9 @@ GRANT SELECT ON cases TO "account.mfa";
 
 create table user_cases(
     uid bigint not null,
-    cases text not null
+    cases text not null,
+    
+    unique(uid)
 );
 
 GRANT SELECT, INSERT, UPDATE ON user_cases TO "account.mfa";
@@ -20,7 +22,9 @@ create table user_providers(
     uid bigint not null,
     providerid varchar(64) not null,
     enabled boolean not null default FALSE,
-    config text not null
+    config text not null,
+    
+    unique(uid, providerid)
 );
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON user_providers TO "account.mfa";

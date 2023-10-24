@@ -166,10 +166,15 @@ class Providers {
                         :uid,
                         :providerid,
                         :config
-                    )';
+                    )
+                    ON CONFLICT DO NOTHING
+                    RETURNING 1';
             
             $q = $th -> pdo -> prepare($sql);
             $q -> execute($task);
+            
+            if(!$q -> fetch())
+                throw new Error('CONFLICT', 'Already configured', 409);
             
             return $config['public'];
         });
