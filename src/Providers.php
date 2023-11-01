@@ -144,7 +144,7 @@ class Providers {
             throw new Error('NOT_FOUND', 'Unknown provider', 404);
         
         if($providers['providers'][ $body['provider'] ]['configured'])
-            throw new Error('CONFLICT', 'Already configured', 409);
+            throw new Error('ALREADY_CONFIGURED', 'Already configured', 405);
         
         return Promise\resolve(
             $this -> providers[ $body['provider'] ] -> configure(
@@ -174,7 +174,7 @@ class Providers {
             $q -> execute($task);
             
             if(!$q -> fetch())
-                throw new Error('CONFLICT', 'Already configured', 409);
+                throw new Error('ALREADY_CONFIGURED', 'Already configured', 405);
             
             return $config['public'];
         });
@@ -192,13 +192,13 @@ class Providers {
         ]);
         
         if($body['provider'] == $this -> defaultProvider)
-            throw new Error('DEFAULT_PROVIDER', 'Cannot remove default provider', 403);
+            throw new Error('READ_ONLY', 'Cannot remove default provider', 405);
         
         if(!isset($providers['providers'][ $body['provider'] ]))
             throw new Error('NOT_FOUND', 'Unknown provider', 404);
         
         if(! $providers['providers'][ $body['provider'] ]['configured'])
-            throw new Error('CONFLICT', 'Already not configured', 409);
+            throw new Error('ALREADY_NOT_CONFIGURED', 'Already not configured', 405);
         
         $task = [
             ':uid' => $body['uid'],
@@ -228,7 +228,7 @@ class Providers {
             throw new Error('NOT_FOUND', 'Unknown provider', 404);
         
         if(! $providers['providers'][ $body['provider'] ]['configured'])
-            throw new Error('NOT_CONFIGURED', 'Cannot enable not configured provider', 403);
+            throw new Error('NOT_CONFIGURED', 'Cannot enable not configured provider', 406);
         
         $task = [
             ':uid' => $body['uid'],

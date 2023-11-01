@@ -99,7 +99,7 @@ class MFA {
             )
         ) -> then(function($valid) {
             if(!$valid)
-                throw new Error('INVALID_2FA', 'Invalid 2FA code', 401);
+                throw new Error('INVALID_2FA', 'Invalid 2FA code', 403);
         });
     }
 }
